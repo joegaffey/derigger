@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>De Rigger</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      .loader {       
+        font-family: verdana;
+        font-size: 24px;
+        display: none;
+        height: auto;
+        width: 250px;
+        position: absolute;
+        top: calc(50% - 50px);
+        left: calc(50% - 125px);
+        text-align: center;
+        padding: 30px 0;
+        background-color: #222222;
+        color: lightgray;
+      }
+      .ta-container {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        top: 20px;
+        left: 20px;
+      }
+      #ta {
+        font-family: verdana;
+      }
+    </style>
+    <script
+      async
+      src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"
+    ></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./lib/three.module.js",
+          "orbitControls": "./lib/OrbitControls.js",
+          "vrButton": "./lib/VRButton.js",
+          "stlProfile": "./STLProfile.js"
+        }
+      }      
+    </script>
+    <script type="text/javascript" src="./lib/dat.gui.min.js"></script>
+  </head>
+  <body>
+    <div class="loader">
+      Loading...
+    </div>
+<div class="ta-container">
+  <button id="updateButton">Update</button>
+<textarea id="ta" rows="10" cols="30">
+8040, 1000, -40, -40, -500, 0, 0, 90
+8040, 1000, 500, -40, -500, 0, 0, 90
+8040, 500, -40, -40, -500, 0, 90, 90
+8040, 500, -40, -40, 100, 0, 90, 90
+8040, 500, -40, -40, 460, 0, 90, 90
+8040, 550, -40, 590, -200, 90, 0, 90
+8040, 550, 500, 590, -200, 90, 0, 90
+8040, 500, -40, 540, -200, 90, 90, 90
+</textarea>
+</div>
+    
+    <script type="module">
+      import * as THREE from 'three';
+      import { OrbitControls } from 'orbitControls';
+      // import STLProfile from 'stlProfile';
+      import { STLLoader } from "./lib/STLLoader.js";
+
+      // import { VRButton } from 'vrButton';
+
+      const gui = new dat.GUI();
+      
+      let loadingCount = 0;
+      const loaderEl = document.querySelector('.loader');
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        10000
+      );
+      
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+      
+      // renderer.xr.enabled = true;
+      // document.body.appendChild(VRButton.createButton(renderer));
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      
+      const wireMaterial = new THREE.MeshPhongMaterial({
+        color: 0x88ff88,
+        transparent: true,
+        opacity: 0.2,
+      });
+      
+      const plColor = 0xffff00;
+
+      // prettier-ignore
+      const urlParams = new URLSearchParams(window.location.hash.replace("#","?"));
+      
+      const camTarget = [0, 150, 0];
+
+      const cams = {
+        leftShoulder: { pos: [-250, 1000, 1200], target: camTarget },
+        rightShoulder: { pos: [250, 1000, 1200], target: camTarget },
+        top: { pos: [200, 2000, -200], target: [200, 0, -200] },
+        driver: { pos: [200, 700, 500], target: [200, 700, 499] },        
+      };
+      setCamera(Object.values(cams)[0]);
+      
+      // if(urlParams.has('size')) {
+      //   // console.log(Object.keys(specs)[urlParams.get('screen')])
+      //   const size = urlParams.get('size');
+      //   const spec = specs[Object.keys(specs)[size]];
+      //   spec.size = size;
+      //   setCurrentSpec(spec);
+      // }
+      // else {
+      //   const spec = specs[defaultSize];
+      //   spec.size = defaultSize;
+      //   setCurrentSpec(spec);
+      // }
+      
+      const pLight = new THREE.PointLight(0xffffff, 3, 1000, 2);
+      pLight.position.set(100, 100, 400);
+      scene.add(pLight);
+
+      const aLight = new THREE.AmbientLight(0x404040, 2.5);
+      scene.add(aLight);
+      
+      const sceneConfig = {
+        wireframe: false,
+        wireMaterial: wireMaterial,
+      };
+      
+      const sceneGUI = gui.addFolder('Scene');
+      sceneGUI.add(sceneConfig, 'wireframe').name('X-Ray').onChange((value) => { setXRay(value); });;
+      sceneGUI.add(sceneConfig.wireMaterial, 'opacity', 0.1, 0.5, 0.01).name('Opacity');
+      sceneGUI.add(aLight, 'intensity', 0, 5, 0.01).name('Ambient Light');
+      
+      const pLightGUI = sceneGUI.addFolder('Point Light');
+      pLightGUI.add(pLight, 'intensity', 0, 5, 0.01).name('Intensity');
+      pLightGUI.add(pLight.position, 'x', -100, 100, 0.1).name('X');
+      pLightGUI.add(pLight.position, 'y', -100, 100, 0.1).name('Y');
+      pLightGUI.add(pLight.position, 'z', -100, 100, 0.1).name('Z');
+      pLightGUI.addColor(pLight, 'color').name('Color');
+      
+      const camGUI = gui.addFolder('Camera');
+      
+      const camSelect = { view: Object.keys(cams)[0] };
+      camGUI.add(camSelect, 'view', Object.keys(cams)).name('View').onChange((value) => {
+        setCamera(cams[value]);
+      });
+      camGUI.add(camera, 'fov', 20, 120).name('FoV').onChange((value) => {
+        camera.updateProjectionMatrix();
+      });
+      
+      const camPosGUI = camGUI.addFolder('Position');
+      camPosGUI.add(camera.position, 'x', -2500, 2500).name('X').listen();
+      camPosGUI.add(camera.position, 'y', -2500, 2500).name('Y').listen();
+      camPosGUI.add(camera.position, 'z', -2500, 2500).name('Z').listen();
+      
+      const camRotGUI = camGUI.addFolder('Rotation');
+      camRotGUI.add(camera.rotation, 'x', -Math.PI, Math.PI).name('Z').listen();
+      camRotGUI.add(camera.rotation, 'y', -Math.PI, Math.PI).name('Y').listen();
+      camRotGUI.add(camera.rotation, 'z', -Math.PI, Math.PI).name('Z').listen();
+      
+      const plasticMaterial = new THREE.MeshPhongMaterial({
+        color: 0x222222,
+      });
+      
+      const taElement = document.querySelector('#ta');
+      const taButtonElement = document.querySelector('#taButton');
+
+      updateButton.addEventListener('click', (event) => {
+        for (let i = scene.children.length - 1; i >= 0; i--) {
+          if(scene.children[i].type === "Mesh")
+            scene.remove(scene.children[i]);
+        }
+        // setTimeoout(() => { buildRig();}, 1000);
+        
+        buildRig();
+      });
+      
+      
+      let geometry8020;
+      
+      const baseURL = 'https://cdn.glitch.global/986c5687-2972-46f0-b0ff-7b262f434b83/';
+      const spec = '8040';
+      
+      const stlLoader = new STLLoader();
+      stlLoader.load(
+        `${baseURL}${spec}.stl`,
+        (geometry) => {
+          geometry8020 = geometry;
+          buildRig();
+        },
+        (xhr) => {
+          console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
+        },
+        (error) => {
+          console.log(`Error loading profile STL: ${spec}`);
+        }
+      );
+      
+      function getProfile(spec, length) {
+        const profile = new THREE.Mesh();
+        profile.geometry = geometry8020.clone();
+        profile.material = plasticMaterial;
+        profile.scale.set(1, 1, length / 100);
+        return profile;
+      }
+      
+      function buildRig() {
+        const rig = [];      
+        const rows = taElement.value.split('\n');
+        rows.forEach(row => {
+          rig.push(row.split(','));
+        });
+        rig.forEach(p => {
+          if(isValidPart(p[0])) {
+            // p.forEach(item => { if(item.isNaN()) return; });
+            const part = getProfile(p[0], p[1]);
+            part.position.set(p[2], p[3], p[4]); 
+            part.rotation.set(p[5] * (Math.PI / 180), p[6] * (Math.PI / 180), p[7] * (Math.PI / 180)); 
+            scene.add(part);
+          }
+        });
+      }      
+      
+      function isValidPart(part) {
+        if(part === '8040')
+          return true;
+        else
+          return false;
+      }
+      
+      function setXRay(on) {
+        scene.children.forEach(p => {
+          if(on) {
+            p.material = wireMaterial;
+          }
+          else {
+            p.material = plasticMaterial;
+          }
+        });
+      }
+      
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      
+      let isDown = false;
+      let isDrag = false;
+      
+      function onPointerMove(event) {
+        pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+        pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+        
+        if(isDown)
+          isDrag = true;
+        else
+          isDrag = false;
+      }
+      window.addEventListener('pointermove', onPointerMove);
+      
+      function onPointerUp() {
+        isDown = false;
+        if(isDrag)
+          return;
+      }
+      window.addEventListener('pointerup', onPointerUp);
+      
+      function onPointerDown() {
+        isDown = true;
+      }      
+      window.addEventListener('pointerdown', onPointerDown);
+                              
+      function setSpecProp(name, value) {
+        currentSpec[name] = value;
+        setScreenSpec(currentSpec);        
+        urlParams.set(name, value.toFixed(2));
+        window.location.hash = urlParams;
+      }
+               
+      function startLoad() {
+        loadingCount++;
+        loaderEl.style.display = 'block';
+      }
+      
+      let loaded = false;
+      
+      function endLoad() {
+        loadingCount--;
+        if(loadingCount === 0) {
+          loaded = true;
+          loaderEl.style.display = 'none';
+        }
+      }
+
+      function setCamera(cam) {
+        camera.position.set(...cam.pos);
+        controls.target.set(...cam.target);
+        controls.update();
+        
+        gui.updateDisplay();
+        document.activeElement.blur();
+      }
+      
+      function animate() {
+        renderer.render(scene, camera);
+      }
+      
+      function updateRaycaster() {
+        raycaster.setFromCamera(pointer, camera);
+
+        let intersects = [];        
+      }
+      
+      renderer.setAnimationLoop(() => {
+        if(loaded)
+          updateRaycaster();
+        animate();
+      });
+
+      window.addEventListener('resize', onWindowResize, false);
+
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    </script>
+  </body>
+</html>
