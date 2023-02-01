@@ -1,20 +1,18 @@
 # De Rigger
 
-In progress fashion mandated sim rig builder.
+The fashionable way to build your sim rig.
 
 Check it out [here](https://derigger.glitch.me/)!
 
 Change the comma separated values in the text area to modify the rig.
 
-Each row represents a part:
+Each row represents a part:  
+Part, x, y, z (scale), x, y, z (position), x, y, z (angle)
 
-Part/model name, x, y, z (scale), x, y, z (position), x, y, z (angle)
+Currently available parts:  
+"8040" - 8040 profile  
+"4040" - 4040 profile  
+"c8040" - 8040 angle  
+"c4040" - 4040 angle  
 
-Add or remove rows as needed.
-
-Only have an "8040" profile model for now.
-More can be added if any interest.
-
-The profile model is 1mm so scale the z axis to get the appropriate length.  
-Edit the example text to get started.  
-Click "Update" to rebuild the 3D model. 
+Profile models are 1mm so scale the z axis to get the desired length.

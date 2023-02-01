@@ -32,6 +32,11 @@
       .ta-buttons {
         display: flex;
         flex-direction: row;
+        margin: 2px;
+      }
+      .ta-buttons > * {
+        margin: 2px;
+        user-select: none;
       }
       #ta {
         font-size: 12px;
@@ -58,23 +63,66 @@
       Loading...
     </div>
     <div class="ta-container">
-<textarea id="ta" rows="10" cols="45">
+      <div class="ta-buttons">
+        <button id="helpButton">Help</button>
+        <button id="listButton">Part List</button>   
+      </div>
+<textarea id="ta" rows="10" cols="43">
 8040, 1, 1, 1000, -40, -40, -500, 0, 0, 90
 8040, 1, 1, 1000, 500, -40, -500, 0, 0, 90
-8040, 1, 1, 500, -40, -40, -500, 0, 90, 90
+4040, 1, 1, 500, -40, 0, -480, 0, 90, 90
 8040, 1, 1, 500, -40, -40, 100, 0, 90, 90
 8040, 1, 1, 500, -40, -40, 460, 0, 90, 90
 8040, 1, 1, 550, -40, 590, -200, 90, 0, 90
 8040, 1, 1, 550, 500, 590, -200, 90, 0, 90
 8040, 1, 1, 500, -40, 540, -200, 90, 90, 90
-8040, 1, 1, 400, 40, 40, 100, 0, 0, 90
-8040, 1, 1, 400, 400, 49, 100, 0, 0, 90
+4040, 1, 1, 400, 40, 80, 100, 0, 0, 90
+4040, 1, 1, 400, 380, 80, 100, 0, 0, 90
+c4040, 1, 1, 1, 360, 40, 100, 0, 0, 90
+c4040, 1, 1, 1, 60, 40, 100, 0, 0, 0
+c4040, 1, 1, 1, 360, 40, 460, 0, 0, 90
+c4040, 1, 1, 1, 60, 40, 460, 0, 0, 0
+c4040, 1, 1, 1, -40, 40, -120, 0, -90, 0
+c4040, 1, 1, 1, 500, 40, -120, 0, -90, 0
+c4040, 1, 1, 1, 460, 40, -200, 0, 90, 0
+c4040, 1, 1, 1, -80, 40, -200, 0, 90, 0
+c8040, 1, 1, 1, -40, 500, -200, 0, 0, -90
+c8040, 1, 1, 1, 460, 500, -200, 0, 0, 180
+c4040, 1, 1, 1, -40, 0, -460, 90, 0, 0
+c4040, 1, 1, 1, 460, 0, -460, 90, 0, 90
+c8040, 1, 1, 1, 460, 40, 140, 90, 0, 90
+c8040, 1, 1, 1, -40, 40, 140, 90, 0, 0
+c8040, 1, 1, 1, -40, 40, 460, 90, 0, -90
+c8040, 1, 1, 1, 460, 40, 460, 90, 0, 180
 </textarea>
-      <div class="ta-buttons">
-        <button id="updateButton">Update</button>
-        <button id="helpButton">Help</button>        
-      </div>
     </div>
+    
+    <dialog id="plDialog">
+      <p>Parts:</p>
+      <p id="plText"></p>
+      <form method="dialog">
+        <button>OK</button>
+      </form>
+    </dialog>
+    
+    <dialog id="helpDialog">
+      <p>Change the comma separated values in the text area.</p>
+      <p>Each row represents a part:</p>
+      <p>Part, x, y, z (scale), x, y, z (position), x, y, z (angle)</p>
+      <p>Currently available parts:<br/>
+        <ul>
+          <li>"8040" - 8040 profile</li>
+          <li>"4040" - 4040 profile</li>
+          <li>"c8040" - 8040 angle</li>
+          <li>"c4040" - 4040 angle</li>
+        </ul>
+      </p>
+      <p>Profile models are 1mm so scale the z axis to get the desired length.</p>
+      <form method="dialog">
+        <button>OK</button>
+      </form>
+    </dialog>
+
     
     <script type="module">
       import * as THREE from 'three';
@@ -127,11 +175,12 @@
       };
       setCamera(Object.values(cams)[0]);
       
-      const pLight = new THREE.PointLight(0xffffff, 3, 1000, 2);
-      pLight.position.set(100, 100, 400);
+      const pLight = new THREE.PointLight(0xffffff, 5, 1000);
+      pLight.position.set(100, 100, 100);
       scene.add(pLight);
 
-      const aLight = new THREE.AmbientLight(0x404040, 2.5);
+
+      const aLight = new THREE.AmbientLight(0x404040, 3);
       scene.add(aLight);
       
       const sceneConfig = {
@@ -176,64 +225,118 @@
       });
       
       const taElement = document.querySelector('#ta');
-      
       const helpButton = document.querySelector('#helpButton');
+      const listButton = document.querySelector('#listButton');
+      const plDialog = document.querySelector('#plDialog');
+      const helpDialog = document.querySelector('#helpDialog');
+      const plText = document.querySelector('#plText');
       
       helpButton.addEventListener('click', (event) => {
-alert(`Change the comma separated values in the text area to modify the rig.
-
-Each row represents a part:
-
-Part/model name, x, y, z (scale), x, y, z (position), x, y, z (angle)
-
-Add or remove rows as needed.
-
-Only have an "8040" profile model for now. More can be added if any interest.
-
-The profile model is 1mm so scale the z axis to get the appropriate length.
-Edit the example text to get started.
-Click "Update" to rebuild the 3D model.`);
+        helpDialog.showModal();
+      });
+      
+       listButton.addEventListener('click', () => {
+         let list = '';
+         let nuts = 0;
+         const rows = taElement.value.split('\n');
+         rows.forEach(row => {
+           if(row.trim().length > 0) {
+             const items = row.split(',');           
+             const model = models[items[0]];
+             
+             list += model.name;
+             if(items[3] > 1)
+               list += ` (${items[3].trim()}mm)`;
+             list += '\n';
+             if(model.nuts)
+               nuts += model.nuts;
+          }
+        });         
+         
+        const counts = {};
+        const pList = list.split('\n');
+        pList.forEach(x => { counts[x] = (counts[x] || 0) + 1; });
+        // console.log(counts)
+         
+        list = '';
+        Object.keys(counts).forEach(i => {
+          if(i.trim().length > 0)
+            list += i + ' x' + counts[i] + '\n';
+        });
+         
+        list += ' T-slot nuts and bolts x' + nuts;
+         
+        plText.innerText = list;
+        plDialog.showModal();
       });
 
-      updateButton.addEventListener('click', (event) => {
+      taElement.onkeyup = () => {
+        rebuild();
+      }
+      
+      function rebuild() {
         for (let i = scene.children.length - 1; i >= 0; i--) {
           if(scene.children[i].type === "Mesh")
             scene.remove(scene.children[i]);
         }        
         buildRig();
-      });
-      
-      
-      let geometry8040;
-      
-      let models = {
-        "8040": {}
       }
       
+      const c4040Shape = new THREE.Shape();      
+      c4040Shape.lineTo(40, 0);      
+      c4040Shape.lineTo(0, 40);
+      
+      const c4040Geom = new THREE.ExtrudeGeometry( c4040Shape, { depth: 40, bevelEnabled: true, bevelSegments: 2, steps: 2, bevelSize: 1, bevelThickness: 1 } );
+      const c8040Geom = new THREE.ExtrudeGeometry( c4040Shape, { depth: 80, bevelEnabled: true, bevelSegments: 2, steps: 2, bevelSize: 1, bevelThickness: 1 } );
+      
+      const models = {
+        "8040": { name: '8040 profile', geom: null, adjust: [1,1,0.01,0,0,0,0,0,0] },   //https://www.thingiverse.com/thing:4261766
+        "4040": { name: '4040 profile', geom: null, adjust: [1,1,0.01,-20,0,0,0,0,0] },  //https://www.thingiverse.com/thing:5372050
+        "c4040": { name: '4040 angle', geom: c4040Geom, nuts: 2 },
+        "c8040": { name: '8040 angle', geom: c8040Geom, nuts: 4 }
+      };      
+      
       const baseURL = 'https://cdn.glitch.global/986c5687-2972-46f0-b0ff-7b262f434b83/';
-      const spec = '8040';
       
       const stlLoader = new STLLoader();
-      stlLoader.load(
-        `${baseURL}${spec}.stl`,
-        (geometry) => {
-          models[spec] = geometry;
-          buildRig();
-        },
-        (xhr) => {
-          console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
-        },
-        (error) => {
-          console.log(`Error loading profile STL: ${spec}`);
-        }
-      );
+      
+      function getGeometry(name) {
+        stlLoader.load(
+          `${baseURL}${name}.stl`,
+          (geometry) => {
+            models[name].geom = geometry;
+            buildRig();
+          },
+          (xhr) => {
+            console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
+          },
+          (error) => {
+            console.log(`Error loading profile STL: ${name}`);
+          }
+        );
+      }
+      
+      Object.keys(models).forEach(model => {
+        if(!models[model].geom) 
+          getGeometry(model);
+      });
       
       function getPart(name) {
         const part = new THREE.Mesh();
-        if(name === '8040') {
-          part.geometry = models[name].clone();
-          part.scale.set(1, 1, 0.01);  // Adjust length to 1mmm
+        const model = models[name];
+        if(!model)
+          return null;
+        if(model.geom)
+          part.geometry = model.geom.clone();
+        // part.geometry.center();
+        
+        if(model.adjust) {
+          const a = model.adjust;
+          part.scale.set(a[0], a[1], a[2]);
+          part.geometry.translate(a[3], a[4], a[5]);
+          part.rotation.set(a[6], a[7], a[8]);
         }
+          
         part.material = plasticMaterial;
         return part;
       }
@@ -245,23 +348,18 @@ Click "Update" to rebuild the 3D model.`);
           rig.push(row.split(','));
         });
         rig.forEach(p => {
-          if(isValidPart(p[0])) {
-            // p.forEach(item => { if(item.isNaN()) return; });
-            const part = getPart(p[0]);
-            part.scale.set(p[1] * part.scale.x, p[2] * part.scale.y, p[3] * part.scale.z);
-            part.position.set(p[4], p[5], p[6]); 
-            part.rotation.set(p[7] * (Math.PI / 180), p[8] * (Math.PI / 180), p[9] * (Math.PI / 180)); 
-            scene.add(part);
+          try {
+            if(p.length > 8) {
+              const part = getPart(p[0]);
+              part.scale.set(p[1] * part.scale.x, p[2] * part.scale.y, p[3] * part.scale.z);
+              part.position.set(p[4], p[5], p[6]); 
+              part.rotation.set(p[7] * (Math.PI / 180), p[8] * (Math.PI / 180), p[9] * (Math.PI / 180)); 
+              scene.add(part);
+            }
           }
+          catch(e) { console.log(e); };
         });
       }      
-      
-      function isValidPart(part) {
-        if(part === '8040')
-          return true;
-        else
-          return false;
-      }
       
       function setXRay(on) {
         scene.children.forEach(p => {
