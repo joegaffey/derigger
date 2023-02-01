@@ -17,4 +17,4 @@ More can be added if any interest.
 
 The profile model is 1mm so scale the z axis to get the appropriate length.  
 Edit the example text to get started.  
-Click "Update" to ewbuild the 3D model. 
+Click "Update" to rebuild the 3D model. 
