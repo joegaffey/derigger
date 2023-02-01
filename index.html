@@ -29,6 +29,10 @@
         top: 20px;
         left: 20px;
       }
+      .ta-buttons {
+        display: flex;
+        flex-direction: row;
+      }
       #ta {
         font-size: 12px;
       }
@@ -54,23 +58,27 @@
       Loading...
     </div>
     <div class="ta-container">
-<textarea id="ta" rows="10" cols="40">
-8040, 1000, -40, -40, -500, 0, 0, 90
-8040, 1000, 500, -40, -500, 0, 0, 90
-8040, 500, -40, -40, -500, 0, 90, 90
-8040, 500, -40, -40, 100, 0, 90, 90
-8040, 500, -40, -40, 460, 0, 90, 90
-8040, 550, -40, 590, -200, 90, 0, 90
-8040, 550, 500, 590, -200, 90, 0, 90
-8040, 500, -40, 540, -200, 90, 90, 90
+<textarea id="ta" rows="10" cols="45">
+8040, 1, 1, 1000, -40, -40, -500, 0, 0, 90
+8040, 1, 1, 1000, 500, -40, -500, 0, 0, 90
+8040, 1, 1, 500, -40, -40, -500, 0, 90, 90
+8040, 1, 1, 500, -40, -40, 100, 0, 90, 90
+8040, 1, 1, 500, -40, -40, 460, 0, 90, 90
+8040, 1, 1, 550, -40, 590, -200, 90, 0, 90
+8040, 1, 1, 550, 500, 590, -200, 90, 0, 90
+8040, 1, 1, 500, -40, 540, -200, 90, 90, 90
+8040, 1, 1, 400, 40, 40, 100, 0, 0, 90
+8040, 1, 1, 400, 400, 49, 100, 0, 0, 90
 </textarea>
-      <button id="updateButton">Update</button>
+      <div class="ta-buttons">
+        <button id="updateButton">Update</button>
+        <button id="helpButton">Help</button>        
+      </div>
     </div>
     
     <script type="module">
       import * as THREE from 'three';
       import { OrbitControls } from 'orbitControls';
-      // import STLProfile from 'stlProfile';
       import { STLLoader } from "./lib/STLLoader.js";
 
       // import { VRButton } from 'vrButton';
@@ -118,19 +126,6 @@
         driver: { pos: [200, 700, 500], target: [200, 700, 499] },        
       };
       setCamera(Object.values(cams)[0]);
-      
-      // if(urlParams.has('size')) {
-      //   // console.log(Object.keys(specs)[urlParams.get('screen')])
-      //   const size = urlParams.get('size');
-      //   const spec = specs[Object.keys(specs)[size]];
-      //   spec.size = size;
-      //   setCurrentSpec(spec);
-      // }
-      // else {
-      //   const spec = specs[defaultSize];
-      //   spec.size = defaultSize;
-      //   setCurrentSpec(spec);
-      // }
       
       const pLight = new THREE.PointLight(0xffffff, 3, 1000, 2);
       pLight.position.set(100, 100, 400);
@@ -181,20 +176,39 @@
       });
       
       const taElement = document.querySelector('#ta');
-      const taButtonElement = document.querySelector('#taButton');
+      
+      const helpButton = document.querySelector('#helpButton');
+      
+      helpButton.addEventListener('click', (event) => {
+alert(`Change the comma separated values in the text area to modify the rig.
+
+Each row represents a part:
+
+Part/model name, x, y, z (scale), x, y, z (position), x, y, z (angle)
+
+Add or remove rows as needed.
+
+Only have an "8040" profile model for now. More can be added if any interest.
+
+The profile model is 1mm so scale the z axis to get the appropriate length.
+Edit the example text to get started.
+Click "Update" to ewbuild the 3D model.`);
+      });
 
       updateButton.addEventListener('click', (event) => {
         for (let i = scene.children.length - 1; i >= 0; i--) {
           if(scene.children[i].type === "Mesh")
             scene.remove(scene.children[i]);
-        }
-        // setTimeoout(() => { buildRig();}, 1000);
-        
+        }        
         buildRig();
       });
       
       
-      let geometry8020;
+      let geometry8040;
+      
+      let models = {
+        "8040": {}
+      }
       
       const baseURL = 'https://cdn.glitch.global/986c5687-2972-46f0-b0ff-7b262f434b83/';
       const spec = '8040';
@@ -203,7 +217,7 @@
       stlLoader.load(
         `${baseURL}${spec}.stl`,
         (geometry) => {
-          geometry8020 = geometry;
+          models[spec] = geometry;
           buildRig();
         },
         (xhr) => {
@@ -214,12 +228,14 @@
         }
       );
       
-      function getProfile(spec, length) {
-        const profile = new THREE.Mesh();
-        profile.geometry = geometry8020.clone();
-        profile.material = plasticMaterial;
-        profile.scale.set(1, 1, length / 100);
-        return profile;
+      function getPart(name) {
+        const part = new THREE.Mesh();
+        if(name === '8040') {
+          part.geometry = models[name].clone();
+          part.scale.set(1, 1, 0.01);  // Adjust length to 1mmm
+        }
+        part.material = plasticMaterial;
+        return part;
       }
       
       function buildRig() {
@@ -231,9 +247,10 @@
         rig.forEach(p => {
           if(isValidPart(p[0])) {
             // p.forEach(item => { if(item.isNaN()) return; });
-            const part = getProfile(p[0], p[1]);
-            part.position.set(p[2], p[3], p[4]); 
-            part.rotation.set(p[5] * (Math.PI / 180), p[6] * (Math.PI / 180), p[7] * (Math.PI / 180)); 
+            const part = getPart(p[0]);
+            part.scale.set(p[1] * part.scale.x, p[2] * part.scale.y, p[3] * part.scale.z);
+            part.position.set(p[4], p[5], p[6]); 
+            part.rotation.set(p[7] * (Math.PI / 180), p[8] * (Math.PI / 180), p[9] * (Math.PI / 180)); 
             scene.add(part);
           }
         });
