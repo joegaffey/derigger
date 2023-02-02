@@ -1,0 +1,51 @@
+body {
+  margin: 0;
+  font-family: verdana;
+  overflow: hidden;
+}
+.loader {       
+  font-size: 24px;
+  display: none;
+  height: auto;
+  width: 250px;
+  position: absolute;
+  top: calc(50% - 50px);
+  left: calc(50% - 125px);
+  text-align: center;
+  padding: 30px 0;
+  background-color: #222222;
+  color: lightgray;
+}
+.ta-container {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  top: 20px;
+  left: 20px;
+}
+.ta-buttons {
+  display: flex;
+  flex-direction: row;
+  margin: 2px;
+}
+.ta-buttons > * {
+  margin: 2px;
+  user-select: none;
+}
+#ta {
+  font-size: 12px;
+}
+.vButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 24px;
+}
+button {
+  user-select: none;
+}
+#guiContainer{
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+}
