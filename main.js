@@ -89,7 +89,7 @@ const camera = new THREE.PerspectiveCamera(
   10000
 );
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
@@ -114,8 +114,8 @@ const camTarget = [0, 150, 0];
 const cams = {
   leftShoulder: { pos: [-250, 1000, 1200], target: camTarget },
   rightShoulder: { pos: [250, 1000, 1200], target: camTarget },
-  top: { pos: [200, 2000, -200], target: [200, 0, -200] },
-  driver: { pos: [200, 700, 500], target: [200, 700, 499] },        
+  top: { pos: [0, 2000, -200], target: [0, 0, -200] },
+  driver: { pos: [0, 700, 500], target: [0, 700, 499] },        
 };
 setCamera(Object.values(cams)[0]);
 
@@ -181,6 +181,8 @@ document.querySelector('#listButton').addEventListener('click', (event) => {
   plDialog.showModal();
 });
 
+let groups = {};
+
 function getPartsListText() {
   let list = '';
   let nuts = 0;
@@ -189,13 +191,14 @@ function getPartsListText() {
     if(row.trim().length > 0) {
       const items = row.split(',');           
       const model = models[items[0]];
-
-      list += model.name;
-      if(items[3] > 1)
-        list += ` (${items[3].trim()}mm)`;
-      list += '\n';
-      if(model.nuts)
-        nuts += model.nuts;
+      if(model) {
+        list += model.name;
+        if(items[4] > 1)
+          list += ` (${items[4].trim()}mm)`;
+        list += '\n';
+        if(model.nuts)
+          nuts += model.nuts;
+      }
     }
   });
 
@@ -219,9 +222,10 @@ taElement.onkeyup = () => {
 
 function rebuild() {
   for (let i = scene.children.length - 1; i >= 0; i--) {
-    if(scene.children[i].type === "Mesh")
+    if(scene.children[i].type === "Mesh" || scene.children[i].type === "Group")
       scene.remove(scene.children[i]);
   }        
+  groups = {};
   buildRig();
 }
 
@@ -243,12 +247,15 @@ const baseURL = './assets/';
 
 const stlLoader = new STLLoader();
 
-function getGeometry(name) {
+function loadGeometry(name) {
   stlLoader.load(
     `${baseURL}${name}.stl`,
     (geometry) => {
       models[name].geom = geometry;
-      buildRig();
+      try {
+        buildRig();
+      }
+      catch(e) { console.log(e); }
     },
     (xhr) => {
       console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
@@ -261,8 +268,19 @@ function getGeometry(name) {
 
 Object.keys(models).forEach(model => {
   if(!models[model].geom) 
-    getGeometry(model);
+    loadGeometry(model);
 });
+
+function getGroup(name) {
+  if(groups[name])
+    return groups[name];
+  else {
+    const group = new THREE.Group();
+    group.name = name;
+    groups[name] = group;
+    return group;
+  }
+}
 
 function getPart(name) {
   const part = new THREE.Mesh();
@@ -285,24 +303,47 @@ function getPart(name) {
 }
 
 function buildRig() {
-  const rig = [];      
-  const rows = taElement.value.split('\n');
-  rows.forEach(row => {
-    rig.push(row.split(','));
+  const spec = [];      
+  taElement.value.split('\n').forEach(l => {
+    spec.push(l.split(','));
   });
-  rig.forEach(p => {
+  
+  spec.forEach(item => {
     try {
-      if(p.length > 8) {
-        const part = getPart(p[0]);
-        part.scale.set(p[1] * part.scale.x, p[2] * part.scale.y, p[3] * part.scale.z);
-        part.position.set(p[4], p[5], p[6]); 
-        part.rotation.set(p[7] * (Math.PI / 180), p[8] * (Math.PI / 180), p[9] * (Math.PI / 180)); 
-        scene.add(part);
-      }
+      if(item.length > 9) {
+        item = item.map(str => str.trim());
+        
+        // Handle part case
+        const part = getPart(item[0]);
+        if(part) {
+          const group = getGroup(item[1]);
+          group.add(part);
+          updatePart(part, item);
+        }
+        else {
+          // Handle group case
+          const group = getGroup(item[0]);
+          const parent = getGroup(item[1]);
+          group.hasParent = true;
+          parent.add(group);
+          updatePart(group, item);
+        }
+      }    
     }
     catch(e) { console.log(e); };
   });
-}      
+  Object.keys(groups).forEach(g => {
+    if(!groups[g].hasParent) {
+      scene.add(groups[g]);
+    }
+  });
+}     
+
+function updatePart(part, p) {
+  part.scale.set(p[2] * part.scale.x, p[3] * part.scale.y, p[4] * part.scale.z);
+  part.position.set(p[5], p[6], p[7]); 
+  part.rotation.set(p[8] * (Math.PI / 180), p[9] * (Math.PI / 180), p[10] * (Math.PI / 180)); 
+}
 
 function setXRay(on) {
   scene.children.forEach(p => {
