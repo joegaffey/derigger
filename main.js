@@ -104,6 +104,12 @@ const wireMaterial = new THREE.MeshPhongMaterial({
   opacity: 0.2,
 });
 
+const selectedMaterial = new THREE.MeshPhongMaterial({
+  color: 0xff0000,
+  transparent: true,
+  opacity: 0.6,
+});
+
 const plColor = 0xffff00;
 
 // prettier-ignore
@@ -218,6 +224,45 @@ function getPartsListText() {
 
 taElement.onkeyup = () => {
   rebuild();
+  updateSelection();
+}
+
+taElement.addEventListener('click', () => {
+  rebuild();
+  updateSelection();
+});
+
+renderer.domElement.addEventListener('click', () => {
+  rebuild();
+});
+
+function updateSelection() {
+  const row = getCaretRow(taElement);
+  if(row > -1) 
+    highlightObject(row);  
+}
+
+function highlightObject(index) {
+  const object = rowMap[index];
+  if(object.type === 'Mesh')
+    object.material = selectedMaterial;
+  else if(object.type === 'Group') {
+     object.children.forEach(child => {
+       child.material = selectedMaterial;
+     });
+  }
+}
+
+function getCaretRow(el) {
+  const pos = el.selectionStart;
+  const rows = el.value.split('\n');
+  let count = 0;
+  for (let i = 0; i < rows.length; i++) {
+    count += (rows[i].length + 1);
+    if(count > pos)
+      return i;
+  }
+  return -1;
 }
 
 function rebuild() {
@@ -302,13 +347,15 @@ function getPart(name) {
   return part;
 }
 
+const rowMap = {};
+
 function buildRig() {
   const spec = [];      
   taElement.value.split('\n').forEach(l => {
     spec.push(l.split(','));
   });
   
-  spec.forEach(item => {
+  spec.forEach((item, i) => {
     try {
       if(item.length > 9) {
         item = item.map(str => str.trim());
@@ -317,12 +364,14 @@ function buildRig() {
         const part = getPart(item[0]);
         if(part) {
           const group = getGroup(item[1]);
+          rowMap[i] = part;
           group.add(part);
           updatePart(part, item);
         }
         else {
           // Handle group case
           const group = getGroup(item[0]);
+          rowMap[i] = group;
           const parent = getGroup(item[1]);
           group.hasParent = true;
           parent.add(group);
@@ -351,7 +400,7 @@ function setXRay(on) {
       p.material = wireMaterial;
     }
     else {
-      p.material = plasticMaterial;
+      p.material = plasticMaterial.clone();
     }
   });
 }
