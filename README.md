@@ -7,7 +7,7 @@ Check it out [here](https://derigger.glitch.me/)!
 Change the comma separated values in the text area to modify the rig.
 
 Each row represents a part:  
-Part, x, y, z (scale), x, y, z (position), x, y, z (angle)
+Part, Group, x, y, z (scale), x, y, z (position), x, y, z (angle)
 
 Currently available parts:  
 "8040" - 8040 profile  
