@@ -7,11 +7,9 @@ button {
   user-select: none;
 }
 dialog {
- max-width: 80vw; 
+  max-width: 80vw; 
 }
 textarea {
-  overflow: scroll;
-/*   max-width: 90%; */
   resize: both;
 }
 .loader {       

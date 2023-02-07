@@ -98,7 +98,7 @@ document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
-const wireMaterial = new THREE.MeshPhongMaterial({
+const xrayMaterial = new THREE.MeshPhongMaterial({
   color: 0x88ff88,
   transparent: true,
   opacity: 0.2,
@@ -134,12 +134,12 @@ scene.add(aLight);
 
 const sceneConfig = {
   wireframe: false,
-  wireMaterial: wireMaterial,
+  xrayMaterial: xrayMaterial,
 };
 
 const sceneGUI = gui.addFolder('Scene');
 sceneGUI.add(sceneConfig, 'wireframe').name('X-Ray').onChange((value) => { setXRay(value); });;
-sceneGUI.add(sceneConfig.wireMaterial, 'opacity', 0.1, 0.5, 0.01).name('Opacity');
+sceneGUI.add(sceneConfig.xrayMaterial, 'opacity', 0.1, 0.5, 0.01).name('X-Ray Opacity');
 sceneGUI.add(aLight, 'intensity', 0, 5, 0.01).name('Ambient Light');
 
 const pLightGUI = sceneGUI.addFolder('Point Light');
@@ -222,9 +222,18 @@ function getPartsListText() {
   return list;
 }
 
-taElement.onkeyup = () => {
+taElement.onkeyup = (e) => {
   rebuild();
   updateSelection();
+if(e.keyCode === 32 && e.ctrlKey) 
+    lineComplete();
+}
+
+taElement.onkeydown = (e) => {
+  if(e.keyCode === 9) {
+    wordComplete();
+    e.preventDefault();
+  }
 }
 
 taElement.addEventListener('click', () => {
@@ -242,8 +251,18 @@ function updateSelection() {
     highlightObject(row);  
 }
 
+function lineComplete() {
+  console.log('@ToDo lineComplete');
+}
+
+function wordComplete() {
+  console.log('@ToDo wordComplete');
+}
+
 function highlightObject(index) {
   const object = rowMap[index];
+  if(!object)
+    return;
   if(object.type === 'Mesh')
     object.material = selectedMaterial;
   else if(object.type === 'Group') {
@@ -327,6 +346,8 @@ function getGroup(name) {
   }
 }
 
+let xrayOn = false;
+
 function getPart(name) {
   const part = new THREE.Mesh();
   const model = models[name];
@@ -343,7 +364,10 @@ function getPart(name) {
     part.rotation.set(a[6], a[7], a[8]);
   }
 
-  part.material = plasticMaterial;
+  if(xrayOn)
+    part.material = xrayMaterial;
+  else
+    part.material = plasticMaterial;
   return part;
 }
 
@@ -395,14 +419,8 @@ function updatePart(part, p) {
 }
 
 function setXRay(on) {
-  scene.children.forEach(p => {
-    if(on) {
-      p.material = wireMaterial;
-    }
-    else {
-      p.material = plasticMaterial.clone();
-    }
-  });
+  xrayOn = on;
+  rebuild();
 }
 
 const raycaster = new THREE.Raycaster();
