@@ -31,6 +31,11 @@ const selectedMaterial = new THREE.MeshPhongMaterial({
   opacity: 0.6,
 });
 
+export const sceneConfig = {
+  wireframe: false,
+  xrayMaterial: xrayMaterial,
+};
+
 export const cams = {
   oblLeft: { name: 'Oblique Left', pos: [-1000, 1000, 1000], target: [0, 250, 0] },
   oblRight: { name: 'Oblique Right', pos: [1000, 1000, 1000], target: [0, 250, 0] },
@@ -51,18 +56,19 @@ export const pLight1 = new THREE.PointLight(0xffffff, 5, 1000);
 pLight1.position.set(-500, -100, -100);
 scene.add(pLight1);
 
-
 export const aLight = new THREE.AmbientLight(0x404040, 3);
 scene.add(aLight);
 
-export const sceneConfig = {
-  wireframe: false,
-  xrayMaterial: xrayMaterial,
-};
+let xrayOn = false;
+const rowMap = {};
+let specStr = null;
 
-const plasticMaterial = new THREE.MeshPhongMaterial({
-  color: 0x222222,
-});
+parts.load();
+
+export function setSpec(str) {
+  specStr = str;
+  rebuild();
+}
 
 export function highlightObject(index) {
   const object = rowMap[index];
@@ -71,9 +77,9 @@ export function highlightObject(index) {
   if(object.type === 'Mesh')
     object.material = selectedMaterial;
   else if(object.type === 'Group') {
-     object.children.forEach(child => {
-       child.material = selectedMaterial;
-     });
+    object.children.forEach(child => {
+     child.material = selectedMaterial;
+    });
   }
 }
 
@@ -86,8 +92,6 @@ export function rebuild() {
   build();
 }
 
-parts.load();
-
 function getGroup(name) {
   if(groups[name])
     return groups[name];
@@ -98,10 +102,6 @@ function getGroup(name) {
     return group;
   }
 }
-
-let xrayOn = false;
-
-const rowMap = {};
 
 function build() {
   const spec = [];      
@@ -168,13 +168,6 @@ export const pointer = new THREE.Vector2();
 renderer.domElement.addEventListener('click', () => {
   rebuild();
 });
-
-let specStr = null;
-
-export function setSpec(str) {
-  specStr = str;
-  rebuild();
-}
 
 export function exportSTL() {
   const exporter = new STLExporter();
