@@ -10,8 +10,8 @@ const c4040Geom = new THREE.ExtrudeGeometry( c4040Shape, { depth: 40, bevelEnabl
 const c8040Geom = new THREE.ExtrudeGeometry( c4040Shape, { depth: 80, bevelEnabled: true, bevelSegments: 2, steps: 2, bevelSize: 1, bevelThickness: 1 } );
 
 export const parts = {
-  "8040": { name: '8040 profile', geom: null, color: 0x444444, adjust: [1,1,0.01,0,0,0,0,0,0] },   //https://www.thingiverse.com/thing:4261766
-  "4040": { name: '4040 profile', geom: null, color: 0x666666, adjust: [1,1,1/120,-20,0,0,0,0,0] },  //https://www.thingiverse.com/thing:2944815
+  "8040": { name: '8040 profile', geom: null, color: 0x444444, adjust: [1,1,1/100,-40,-20,0,0,0,0] },   //https://www.thingiverse.com/thing:4261766
+  "4040": { name: '4040 profile', geom: null, color: 0x666666, adjust: [1,1,1/120,0,0,0,0,0,0] },  //https://www.thingiverse.com/thing:2944815
   "c4040": { name: '4040 corner', geom: c4040Geom, color: 0x111111, nuts: 2 },
   "c8040": { name: '8040 corner', geom: c8040Geom, color: 0x111111, nuts: 4 }
 };
