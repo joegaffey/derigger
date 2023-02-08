@@ -81,6 +81,8 @@ export function highlightObject(index) {
      child.material = selectedMaterial;
     });
   }
+  const axesHelper = new THREE.AxesHelper(200);
+  object.add(axesHelper);
 }
 
 export function rebuild() {
