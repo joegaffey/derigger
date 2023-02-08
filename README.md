@@ -4,15 +4,21 @@ The fashionable way to build your sim rig.
 
 Check it out [here](https://derigger.glitch.me/)!
 
-Change the comma separated values in the text area to modify the rig.
-
+Change the comma separated values in the text area to modify the rig.  
 Each row represents a part:  
+
 Part, Group, x, y, z (scale), x, y, z (position), x, y, z (angle)
 
 Currently available parts:  
+
 "8040" - 8040 profile  
 "4040" - 4040 profile  
 "c8040" - 8040 angle  
 "c4040" - 4040 angle  
 
-Profile models are 1mm so scale the z axis to get the desired length.
+Groups are a collection of parts that can also be treated like a part.  
+Every part must be in a group. The top level group can be called anything e.g. "model".  
+
+Straight profile parts are set to 1mm depth. Scale the z axis to get the desired length.
+
+Use a '#' at the start of the line to hide a part.
