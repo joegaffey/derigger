@@ -41,9 +41,9 @@ export const cams = {
   oblRight: { name: 'Oblique Right', pos: [1000, 1000, 1000], target: [0, 250, 0] },
   left: { name: 'Left', pos: [-1500, 500, 0], target: [0, 250, 0] },
   right: { name: 'Right', pos: [1500, 500, 0], target: [0, 250, 0] },
-  front: { name: 'Front', pos: [0, 700, -1500], target: [0, 250, 0] },
-  back: { name: 'Back', pos: [0, 700, 1500], target: [0, 250, 0] },
-  top: { name: 'Top', pos: [-50, 1500, -200], target: [-50, 0, -200] },
+  top: { name: 'Top', pos: [-50, 1500, -1500], target: [-50, 0, -250] },
+  front: { name: 'Front', pos: [0, 500, -1500], target: [0, 250, 0] },
+  back: { name: 'Back', pos: [0, 500, 1250], target: [0, 250, 0] },
   driver: { name: 'Driver', pos: [-50, 700, 500], target: [-50, 700, 499] },        
 };
 setCamera(Object.values(cams)[0]);
@@ -70,24 +70,28 @@ export function setSpec(str) {
   rebuild();
 }
 
-export function highlightObject(index) {
+export function highlightRow(index) {
   const object = rowMap[index];
   if(!object)
     return;
-  if(object.type === 'Mesh')
-    object.material = selectedMaterial;
-  else if(object.type === 'Group') {
-    object.children.forEach(child => {
-     child.material = selectedMaterial;
-    });
-  }
+  highlightObject(object);
   const axesHelper = new THREE.AxesHelper(200);
   object.add(axesHelper);
 }
 
+function highlightObject(object) {
+  if(object.type === 'Mesh')
+    object.material = selectedMaterial;
+  else if(object.type === 'Object3D') {
+    object.children.forEach(child => {
+      highlightObject(child);
+    });
+  }
+}
+
 export function rebuild() {
   for (let i = scene.children.length - 1; i >= 0; i--) {
-    if(scene.children[i].type === "Mesh" || scene.children[i].type === "Group")
+    if(scene.children[i].type === "Mesh" || scene.children[i].type === "Object3D")
       scene.remove(scene.children[i]);
   }        
   groups = {};
@@ -95,10 +99,14 @@ export function rebuild() {
 }
 
 function getGroup(name) {
-  if(groups[name])
-    return groups[name];
+  if(groups[name]) {
+    if(groups[name].parent)
+      return groups[name].clone();
+    else    
+      return groups[name];
+  }
   else {
-    const group = new THREE.Group();
+    const group = new THREE.Object3D();
     group.name = name;
     groups[name] = group;
     return group;
@@ -106,7 +114,9 @@ function getGroup(name) {
 }
 
 function build() {
-  const spec = [];      
+  const spec = [];
+  if(!specStr)
+    return;
   specStr.split('\n').forEach(l => {
     spec.push(l.split(','));
   });
@@ -137,7 +147,7 @@ function build() {
           const group = getGroup(row[0]);
           rowMap[i] = group;
           const parent = getGroup(row[1]);
-          group.hasParent = true;
+          group.parent = parent;
           group.visible = visible;
           parent.add(group);
           updatePart(group, row);
@@ -147,7 +157,7 @@ function build() {
     catch(e) { console.log(e); };
   });
   Object.keys(groups).forEach(g => {
-    if(!groups[g].hasParent) {
+    if(!groups[g].parent) {
       scene.add(groups[g]);
     }
   });

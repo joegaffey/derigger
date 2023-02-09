@@ -7,7 +7,7 @@ Check it out [here](https://derigger.glitch.me/)!
 Change the comma separated values in the text area to modify the rig.  
 Each row represents a part:  
 
-Part, Group, x, y, z (scale), x, y, z (position), x, y, z (angle)
+Part, Assembly, x, y, z (scale), x, y, z (position), x, y, z (angle)
 
 Currently available parts:  
 
@@ -16,8 +16,8 @@ Currently available parts:
 "c8040" - 8040 angle  
 "c4040" - 4040 angle  
 
-Groups are a collection of parts that can also be treated like a part.  
-Every part must be in a group. The top level group can be called anything e.g. "model".  
+Assemblies are a combination of parts that can also be used as a part.
+Every part must be in an assembly. The top level or default assembly can be called anything e.g. "model".
 
 Straight profile parts are set to 1mm depth. Scale the z axis to get the desired length.
 
