@@ -10,7 +10,13 @@ const helpDialog = document.querySelector('#helpDialog');
 const exportDialog = document.querySelector('#exportDialog');
 const plText = document.querySelector('#plText');
 
-model.setSpec(taElement.value);
+
+fetch('./rig.csv')
+  .then((response) => response.text())
+  .then((text) => {
+    taElement.value = text;
+    model.setSpec(text);
+});
 
 window.dlCSV = () => {
   downloadText('rig.csv', taElement.value);
@@ -151,7 +157,7 @@ taElement.addEventListener('click', () => {
 function updateSelection() {
   const row = getCaretRow(taElement);
   if(row > -1) 
-    model.highlightObject(row);  
+    model.highlightRow(row);  
 }
 
 function lineComplete() {

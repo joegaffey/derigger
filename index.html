@@ -36,60 +36,17 @@
         <button id="importButton">Import</button>
         <input type="file" id="input-file" accept=".csv" hidden>
       </div>
-<textarea wrap="off" id="ta" rows="10" cols="50">
-8040, base, 1, 1, 1000, -60, 0, -500, 0, 0, 90
-8040, base, 1, 1, 1000, 480, 0, -500, 0, 0, 90
-4040, base, 1, 1, 500, -40, -20, -480, 0, 90, 90
-8040, base, 1, 1, 500, -40, 0, 120, 0, 90, 90
-8040, base, 1, 1, 500, -40, 0, 480, 0, 90, 90
-c4040, base, 1, 1, 1, -40, 0, -460, 90, 0, 0
-c4040, base, 1, 1, 1, 460, 0, -460, 90, 0, 90
-c8040, base, 1, 1, 1, 460, 40, 140, 90, 0, 90
-c8040, base, 1, 1, 1, -40, 40, 140, 90, 0, 0
-c8040, base, 1, 1, 1, -40, 40, 460, 90, 0, -90
-c8040, base, 1, 1, 1, 460, 40, 460, 90, 0, 180
-8040, wheel, 1, 1, 550, -60, 590, -160, 90, 0, 90
-8040, wheel, 1, 1, 550, 480, 590, -160, 90, 0, 90
-8040, wheel, 1, 1, 500, -40, 520, -160, 90, 90, 90
-c4040, wheel, 1, 1, 1, -40, 40, -120, 0, -90, 0
-c4040, wheel, 1, 1, 1, 500, 40, -120, 0, -90, 0
-c4040, wheel, 1, 1, 1, 460, 40, -200, 0, 90, 0
-c4040, wheel, 1, 1, 1, -80, 40, -200, 0, 90, 0
-c8040, wheel, 1, 1, 1, -40, 500, -200, 0, 0, -90
-c8040, wheel, 1, 1, 1, 460, 500, -200, 0, 0, 180
-4040, seat, 1, 1, 400, 40, 60, 100, 0, 0, 90
-4040, seat, 1, 1, 400, 380, 60, 100, 0, 0, 90
-c4040, seat, 1, 1, 1, 360, 40, 140, 90, 90, 90
-c4040, seat, 1, 1, 1, 20, 40, 140, 90, 90, 90
-c4040, seat, 1, 1, 1, 360, 40, 460, 180, 90, 90
-c4040, seat, 1, 1, 1, 20, 40, 460, 180, 90, 90
-8040, pedals, 1, 1, 500, -20, 40, -640, 0, 0, 90
-8040, pedals, 1, 1, 500, 440, 40, -640, 0, 0, 90
-4040, pedals, 1, 1, 420, 0, 60, -620, 0, 90, 90
-4040, pedals, 1, 1, 420, 0, 60, -160, 0, 90, 90
-c4040, pedals, 1, 1, 1, 0, 40, -600, 180, 0, 0
-c4040, pedals, 1, 1, 1, 420, 40, -640, 0, 0, 180
-c4040, pedals, 1, 1, 1, 0, 40, -140, 180, 0, 0
-c4040, pedals, 1, 1, 1, 420, 40, -180, 0, 0, 180
-8040, shifter, 1, 1, 220, -20, 260, 40, 90, 0, 90
-8040, shifter, 1, 1, 300, -20, 300, -220, 0, 0, 90
-c4040, shifter, 1, 1, 1, -40, 260, 0, -90, 90, 0
-c4040, shifter, 1, 1, 1, 0, 260, -220, 90, -90, 0
-c4040, shifter, 1, 1, 1, 0, 40, 0, -90, -90, 0
-c4040, shifter, 1, 1, 1, 0, 40, 80, 0, -90, 0
-base, model, 1, 1, 1, -250, 0, 0, 0, 0, 0
-seat, model, 1, 1, 1, -250, 0, 0, 0, 0, 0
-wheel, model, 1, 1, 1, -250, 0, -100, 0, 0, 0
-pedals, model, 1, 1, 1, -250, -40, -100, 10, 0, 0
-shifter, model, 1, 1, 1, 250, 0, 0, 0, 0, 0
-</textarea>
+      <textarea wrap="off" id="ta" rows="10" cols="50">Loading...</textarea>
     </div>
        
     <dialog id="helpDialog">
-      <p>How to design your rig:</p>
-      <p>Change the comma separated values in the text area.<br/>Each row represents a part:</p>
-      <p>Part, Group, x, y, z (scale), x, y, z (position), x, y, z (angle)</p>
-      <p>Currently available parts:
+      <h3>How to design your rig</h3>
+      <p>
+        Change the comma separated values in the text area.<br/>
+        Each row represents a part as follows:
+      </p>
+      <p>Part, Assembly, x, y, z (scale), x, y, z (position), x, y, z (angle)</p>
+      <p>Currently available parts are:
         <ul>
           <li>"8040" - 8040 profile</li>
           <li>"4040" - 4040 profile</li>
@@ -97,8 +54,9 @@ shifter, model, 1, 1, 1, 250, 0, 0, 0, 0, 0
           <li>"c4040" - 4040 corner</li>
         </ul>
       </p>
-      <p>Groups are a collection of parts that can also be treated like a part.<br/>
-        Every part must be in a group. The top level group can be called anything e.g. "model".<br/>
+      <p>
+        Assemblies are a combination of parts that can also be used as a part.<br/>
+        Every part must have an assembly. The top level or default assembly can be called anything e.g. "model".<br/>
       </p> 
       <p>Straight profile parts are set to 1mm depth. Scale the z axis to get the desired length.</p>
       <p>Use a '#' at the start of the line to hide a part.</p>
@@ -108,19 +66,20 @@ shifter, model, 1, 1, 1, 250, 0, 0, 0, 0, 0
     </dialog>
   
     <dialog id="plDialog">
-      <p>Parts:</p>
+      <h3>Part List</h3>
       <p id="plText"></p>
       <form method="dialog">
         <button>Close</button>
+        <button class="green" onclick="dlParts()">Save</button>
       </form>
     </dialog>
 
     <dialog id="exportDialog">
-      <p>Export:</p>
+      <h3>Export</h3>
       <div class="vButtons">
-        <button onclick="dlParts()">Parts List</button>
-        <button onclick="dlCSV()">CSV File</button>
-        <button onclick="dlSTL()">3D Model (STL)</button>
+        <button class="green" onclick="dlParts()">Parts List</button>
+        <button class="green" onclick="dlCSV()">CSV File</button>
+        <button class="green" onclick="dlSTL()">3D Model (STL)</button>
       </div>
       <form method="dialog">
         <button>Close</button>
