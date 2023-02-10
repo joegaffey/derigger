@@ -6,12 +6,24 @@ import { parts } from 'parts';
 let groups = {};
 
 const scene = new THREE.Scene();
-export const camera = new THREE.PerspectiveCamera(
-  60,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  10000
-);
+export const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
+
+export const aLight = new THREE.AmbientLight(0x404040, 3);
+scene.add(aLight);
+
+//https://manu.ninja/webgl-3d-model-viewer-using-three-js/
+export const keyLight = new THREE.DirectionalLight(new THREE.Color('hsl(30, 100%, 75%)'), 1.0);
+keyLight.position.set(-100, 0, 100);
+
+const fillLight = new THREE.DirectionalLight(new THREE.Color('hsl(240, 100%, 75%)'), 0.75);
+fillLight.position.set(100, 0, 100);
+
+const backLight = new THREE.DirectionalLight(0xffffff, 1.0);
+backLight.position.set(100, 0, -100).normalize();
+
+scene.add(keyLight);
+scene.add(fillLight);
+scene.add(backLight);
 
 export const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -37,33 +49,19 @@ export const sceneConfig = {
 };
 
 export const cams = {
-  oblLeft: { name: 'Oblique Left', pos: [-1000, 1000, 1000], target: [0, 250, 0] },
-  oblRight: { name: 'Oblique Right', pos: [1000, 1000, 1000], target: [0, 250, 0] },
-  left: { name: 'Left', pos: [-1500, 500, 0], target: [0, 250, 0] },
-  right: { name: 'Right', pos: [1500, 500, 0], target: [0, 250, 0] },
-  top: { name: 'Top', pos: [-50, 1500, -1500], target: [-50, 0, -250] },
-  front: { name: 'Front', pos: [0, 500, -1500], target: [0, 250, 0] },
-  back: { name: 'Back', pos: [0, 500, 1250], target: [0, 250, 0] },
-  driver: { name: 'Driver', pos: [-50, 700, 500], target: [-50, 700, 499] },        
+  oblLeft: { name: 'Oblique Left', pos: [-1000, 1000, 1000], target: [0, 0, 0] },
+  oblRight: { name: 'Oblique Right', pos: [1000, 1000, 1000], target: [0, 0, 0] },
+  left: { name: 'Left', pos: [-1500, 500, 0], target: [0, 0, 0] },
+  right: { name: 'Right', pos: [1500, 500, 0], target: [0, 0, 0] },
+  top: { name: 'Top', pos: [0, 1500, 10], target: [0, 0, 0] },
+  front: { name: 'Front', pos: [0, 500, -1500], target: [0, 0, 0] },
+  back: { name: 'Back', pos: [0, 500, 1250], target: [0, 0, 0] }
 };
 setCamera(Object.values(cams)[0]);
-
-export const pLight = new THREE.PointLight(0xffffff, 5, 1000);
-pLight.position.set(500, 100, 100);
-scene.add(pLight);
-
-export const pLight1 = new THREE.PointLight(0xffffff, 5, 1000);
-pLight1.position.set(-500, -100, -100);
-scene.add(pLight1);
-
-export const aLight = new THREE.AmbientLight(0x404040, 3);
-scene.add(aLight);
 
 let xrayOn = false;
 const rowMap = {};
 let specStr = null;
-
-parts.load();
 
 export function setSpec(str) {
   specStr = str;
@@ -111,6 +109,26 @@ function getGroup(name) {
     groups[name] = group;
     return group;
   }
+}
+
+export function getAllMeshProps(prop) {
+  const items = [];
+  scene.traverse((obj) => {
+    if(obj.type === 'Mesh'){
+      items.push(obj[prop]);
+    }
+  });
+  return items;
+}
+
+export function getAllMeshInstances() {
+  const items = [];
+  scene.traverse((obj) => {
+    if(obj.type === 'Mesh'){
+      items.push(obj);
+    }
+  });
+  return items;
 }
 
 function build() {
@@ -167,6 +185,7 @@ function updatePart(part, spec) {
   part.scale.set(spec[2] * part.scale.x, spec[3] * part.scale.y, spec[4] * part.scale.z);
   part.position.set(spec[5], spec[6], spec[7]); 
   part.rotation.set(spec[8] * (Math.PI / 180), spec[9] * (Math.PI / 180), spec[10] * (Math.PI / 180)); 
+  part.userData.scaleZ = spec[4]; //Store original scale
 }
 
 export function setXRay(on) {

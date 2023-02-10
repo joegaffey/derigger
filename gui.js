@@ -10,19 +10,12 @@ sceneGUI.add(model.sceneConfig, 'wireframe').name('X-Ray').onChange((value) => {
 sceneGUI.add(model.sceneConfig.xrayMaterial, 'opacity', 0.1, 0.5, 0.01).name('X-Ray Opacity');
 sceneGUI.add(model.aLight, 'intensity', 0, 20, 0.1).name('Ambient Light');
 
-const pLightGUI = sceneGUI.addFolder('Point Light 1');
-pLightGUI.add(model.pLight, 'intensity', 0, 10, 0.1).name('Intensity');
-pLightGUI.add(model.pLight.position, 'x', -1000, 1000, 10).name('X');
-pLightGUI.add(model.pLight.position, 'y', -1000, 1000, 10).name('Y');
-pLightGUI.add(model.pLight.position, 'z', -1000, 1000, 10).name('Z');
-pLightGUI.addColor(model.pLight, 'color').name('Color');
-
-const pLightGUI1 = sceneGUI.addFolder('Point Light 2');
-pLightGUI1.add(model.pLight1, 'intensity', 0, 10, 0.1).name('Intensity');
-pLightGUI1.add(model.pLight1.position, 'x', -1000, 1000, 10).name('X');
-pLightGUI1.add(model.pLight1.position, 'y', -1000, 1000, 10).name('Y');
-pLightGUI1.add(model.pLight1.position, 'z', -1000, 1000, 10).name('Z');
-pLightGUI1.addColor(model.pLight1, 'color').name('Color');
+const pLightGUI = sceneGUI.addFolder('Key Light');
+pLightGUI.add(model.keyLight, 'intensity', 0, 10, 0.1).name('Intensity');
+pLightGUI.add(model.keyLight.position, 'x', -1000, 1000, 10).name('X');
+pLightGUI.add(model.keyLight.position, 'y', -1000, 1000, 10).name('Y');
+pLightGUI.add(model.keyLight.position, 'z', -1000, 1000, 10).name('Z');
+pLightGUI.addColor(model.keyLight, 'color').name('Color');
 
 const camGUI = gui.addFolder('Camera');
 
