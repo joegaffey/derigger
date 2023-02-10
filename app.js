@@ -8,28 +8,52 @@ const loaderEl = document.querySelector('.loader');
 const plDialog = document.querySelector('#plDialog');
 const helpDialog = document.querySelector('#helpDialog');
 const exportDialog = document.querySelector('#exportDialog');
-const plText = document.querySelector('#plText');
+const partsHelpEl = document.querySelector('#partsUl');
+const modelSelectEl = document.querySelector('#model-select');
+const plTextEl = document.querySelector('#plText');
 
 
-fetch('./rig.csv')
-  .then((response) => response.text())
-  .then((text) => {
-    taElement.value = text;
-    model.setSpec(text);
-});
+parts.load(partsLoaded);
+
+function partsLoaded() {
+  let html = '';
+  Object.keys(parts).forEach(model => {
+  if(typeof parts[model] !== 'function')
+    html += `<li>"${model}": ${parts[model].name} (${parts[model].type})</li>\n`;
+  });
+  partsHelpEl.innerHTML = html;
+}
+
+modelSelectEl.onchange = () => {
+  getCSV(modelSelectEl.value);
+};
+
+const modelBase = './models/';
+      
+function getCSV(name) {
+  fetch(modelBase + name)
+    .then((response) => response.text())
+    .then((text) => {
+      taElement.value = text;
+      model.setSpec(text);
+  });  
+}
+
+getCSV(modelSelectEl.value);
+
 
 window.dlCSV = () => {
-  downloadText('rig.csv', taElement.value);
+  downloadText('model.csv', taElement.value);
 }
 
 window.dlParts = () => {
-  const txt = getPartsListText();
-  downloadText('parts.txt', txt);
+  const txt = getBOMText();
+  downloadText('model.txt', txt);
 }
 
 window.dlSTL = () => {
   const stl = model.exportSTL();
-  save(new Blob([stl]), 'rig.stl');
+  save(new Blob([stl]), 'model.stl');
 }
 
 function save(blob, filename) {
@@ -84,7 +108,6 @@ let loadingCount = 0;
 // renderer.xr.enabled = true;
 // document.body.appendChild(VRButton.createButton(renderer));
 
-// prettier-ignore
 const urlParams = new URLSearchParams(window.location.hash.replace("#","?"));
 
 
@@ -97,29 +120,39 @@ document.querySelector('#expButton').addEventListener('click', (event) => {
 });
 
 document.querySelector('#listButton').addEventListener('click', (event) => {
-  plText.innerText = getPartsListText();
+  plTextEl.innerText = getBOMText();
   plDialog.showModal();
 });
 
-function getPartsListText() {
+function getBOMText() {
   let list = '';
-  let nuts = 0;
-  const rows = taElement.value.split('\n');
-  rows.forEach(row => {
-    if(row.trim().length > 0) {
-      const items = row.split(',');           
-      const part = parts[items[0]];
-      if(part) {
-        list += part.name;
-        if(items[4] > 1)
-          list += ` (${items[4].trim()}mm)`;
-        list += '\n';
-        if(part.nuts)
-          nuts += part.nuts;
-      }
-    }
+  let accessories = {};
+  const meshes = model.getAllMeshInstances();
+  meshes.forEach(mesh => {
+    const part = parts[mesh.name];
+    list += part.name;
+    if(part.type === 'Extruded')
+      list += ` (${mesh.userData.scaleZ}mm)\n`;
+    else if(mesh.scale.x !== 1 || mesh.scale.y !== 1 || mesh.scale.z !== 1) 
+      list += ` (scaled)\n`;
+    else 
+      list += `\n`;
   });
 
+  const partNames = model.getAllMeshProps('name');
+  partNames.forEach(name => {
+    const part = parts[name];
+    if(part && part.accessories) {
+      part.accessories.forEach(acc => {
+      if(accessories[acc.id]) {
+        accessories[acc.id].count += acc.count;
+      }
+      else
+        accessories[acc.id] = { name: acc.name, count: acc.count };
+    });
+    }
+  });
+  
   const counts = {};
   const pList = list.split('\n');
   pList.forEach(x => { counts[x] = (counts[x] || 0) + 1; });
@@ -129,8 +162,12 @@ function getPartsListText() {
     if(i.trim().length > 0)
       list += i + ' x' + counts[i] + '\n';
   });
+  
+  Object.keys(accessories).forEach(key => {
+    const acc = accessories[key];
+    list += `${acc.name} x${acc.count}\n`;
+  });
 
-  list += 'T-slot nuts and bolts x' + nuts;
   return list;
 }
 
